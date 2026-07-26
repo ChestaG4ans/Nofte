@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="assets/logo.png">
+<title>Settings</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Phosphor Icons -->
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+</head>
+<body>
+
+<div class="app">
+
+<aside class="sidebar">
+
+<div class="logo">
+    <img src="assets/logo.png" class="logo-icon" alt="NoFTe Logo">
+    <span>NoFTe</span>
+</div>
+
+<nav>
+<a href="index.html">🏠 Dashboard</a>
+<a href="scan.html">📷 Scan Makanan</a>
+<a href="history.html">📄 Riwayat</a>
+<a href="expiry.html">⏰ Kadaluarsa</a>
+<a href="inventory.html">📦 Inventory</a>
+<a href="assistant.html">🤖 AI Assistant</a>
+<a href="settings.html" class="active">⚙ Settings</a>
+</nav>
+
+</aside>
+
+<main class="main settings-page">
+
+<div class="settings-container">
+
+    <!-- Header -->
+    <div class="settings-header">
+        <h1>Settings</h1>
+    </div>
+
+    <!-- User Profile Card -->
+    <div class="settings-profile">
+        <div class="profile-avatar">
+            <span>C</span>
+        </div>
+        <div class="profile-info">
+            <h3>Chesta</h3>
+            <p>chesta@email.com</p>
+        </div>
+        <i class="ph ph-caret-right"></i>
+    </div>
+
+    <!-- Settings List -->
+    <div class="settings-section">
+        <div class="settings-item" onclick="openLanguageModal()">
+            <div class="settings-item-left">
+                <i class="ph ph-translate"></i>
+                <span>Language</span>
+            </div>
+            <div class="settings-item-right">
+                <span class="settings-value">English</span>
+                <i class="ph ph-caret-right"></i>
+            </div>
+        </div>
+
+        <div class="settings-item theme-toggle" onclick="toggleTheme()">
+            <div class="settings-item-left">
+                <i class="ph ph-moon" id="themeIcon"></i>
+                <span>Theme</span>
+            </div>
+            <div class="settings-item-right">
+                <span class="settings-value" id="themeValue">Dark</span>
+                <i class="ph ph-caret-right"></i>
+            </div>
+        </div>
+
+        <div class="settings-item">
+            <div class="settings-item-left">
+                <i class="ph ph-bell"></i>
+                <span>Notifications</span>
+            </div>
+            <div class="settings-item-right">
+                <label class="toggle-switch">
+                    <input type="checkbox" checked id="notificationsToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- More Options -->
+    <div class="settings-section">
+        <div class="settings-item">
+            <div class="settings-item-left">
+                <i class="ph ph-info"></i>
+                <span>About</span>
+            </div>
+            <div class="settings-item-right">
+                <i class="ph ph-caret-right"></i>
+            </div>
+        </div>
+
+        <div class="settings-item">
+            <div class="settings-item-left">
+                <i class="ph ph-question"></i>
+                <span>Help & Feedback</span>
+            </div>
+            <div class="settings-item-right">
+                <i class="ph ph-caret-right"></i>
+            </div>
+        </div>
+
+        <div class="settings-item">
+            <div class="settings-item-left">
+                <i class="ph ph-users-three"></i>
+                <span>Invite Friends</span>
+            </div>
+            <div class="settings-item-right">
+                <i class="ph ph-caret-right"></i>
+            </div>
+        </div>
+
+        <div class="settings-item" onclick="rateApp()">
+            <div class="settings-item-left">
+                <i class="ph ph-star"></i>
+                <span>Rate Us</span>
+            </div>
+            <div class="settings-item-right">
+                <i class="ph ph-caret-right"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="settings-section">
+        <div class="settings-item logout" onclick="logout()">
+            <div class="settings-item-left">
+                <i class="ph ph-sign-out"></i>
+                <span>Log Out</span>
+            </div>
+            <div class="settings-item-right">
+                <i class="ph ph-caret-right"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version -->
+    <div class="settings-footer">
+        <p>Version 1.0.0</p>
+    </div>
+
+</div>
+
+<!-- Language Modal -->
+<div class="modal-overlay" id="languageModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Select Language</h3>
+            <button class="modal-close" onclick="closeLanguageModal()">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="language-option selected" onclick="selectLanguage('English')">
+                <span>English</span>
+                <i class="ph ph-check"></i>
+            </div>
+            <div class="language-option" onclick="selectLanguage('Bahasa Indonesia')">
+                <span>Bahasa Indonesia</span>
+                <i class="ph ph-check"></i>
+            </div>
+            <div class="language-option" onclick="selectLanguage('简体中文')">
+                <span>简体中文</span>
+                <i class="ph ph-check"></i>
+            </div>
+            <div class="language-option" onclick="selectLanguage('日本語')">
+                <span>日本語</span>
+                <i class="ph ph-check"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+</main>
+
+</div>
+
+<script src="auth.js"></script>
+<script src="settings.js"></script>
+
+<script>
+// Theme Management - Read from localStorage or default to dark
+let currentTheme = localStorage.getItem('nofte-theme') || 'dark';
+
+function initTheme() {
+    // Apply theme to document
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    updateThemeUI();
+    console.log('Theme initialized:', currentTheme);
+}
+
+function toggleTheme() {
+    // Toggle between dark and light
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    localStorage.setItem('nofte-theme', currentTheme);
+    updateThemeUI();
+    console.log('Theme toggled to:', currentTheme);
+}
+
+function updateThemeUI() {
+    const themeIcon = document.getElementById('themeIcon');
+    const themeValue = document.getElementById('themeValue');
+
+    if (currentTheme === 'dark') {
+        themeIcon.className = 'ph ph-moon';
+        themeValue.textContent = 'Dark';
+    } else {
+        themeIcon.className = 'ph ph-sun';
+        themeValue.textContent = 'Light';
+    }
+}
+
+// Language Modal
+function openLanguageModal() {
+    document.getElementById('languageModal').classList.add('active');
+}
+
+function closeLanguageModal() {
+    document.getElementById('languageModal').classList.remove('active');
+}
+
+function selectLanguage(lang) {
+    document.querySelectorAll('.language-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    document.querySelector('.settings-item:first-child .settings-value').textContent = lang;
+    localStorage.setItem('language', lang);
+    setTimeout(closeLanguageModal, 300);
+}
+
+// Actions
+function rateApp() {
+    alert('Thank you for your support! ⭐');
+}
+
+function logout() {
+    if (confirm('Are you sure you want to log out?')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+}
+
+// Initialize theme on load
+initTheme();
+</script>
+
+</body>
+</html>

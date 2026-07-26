@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NoFTe Dashboard</title>
+
+    <link rel="icon" type="image/png" href="assets/logo.png">
+
+    <link rel="stylesheet" href="style.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            <img src="assets/logo.png" class="logo-icon" alt="Logo">
+
+            <div>
+                <h2>NoFTe</h2>
+                <small>Food Waste AI</small>
+            </div>
+        </div>
+
+        <nav>
+
+            <a href="index.html" class="active">
+                🏠 Dashboard
+            </a>
+
+            <a href="scan.html">
+                📷 Scan Makanan
+            </a>
+
+            <a href="history.html">
+                📄 Riwayat
+            </a>
+
+            <a href="expiry.html">
+                ⏰ Kadaluarsa
+            </a>
+
+            <a href="inventory.html">
+                📦 Inventory
+            </a>
+
+            <a href="assistant.html">
+                🤖 AI Assistant
+            </a>
+
+            <a href="settings.html">
+                ⚙ Settings
+            </a>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- HEADER -->
+        <header class="topbar">
+
+            <div>
+                <h1>Dashboard</h1>
+                <p>Selamat datang kembali di NoFTe</p>
+            </div>
+
+            <div class="user-box">
+
+                <div class="avatar">
+                    C
+                </div>
+
+                <div>
+                    <strong>Chesta</strong>
+                    <small>User</small>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- STATS -->
+        <section class="stats-grid">
+
+            <div class="stat-card">
+                <span>Total Scan</span>
+                <h2 id="statTotalScan">0</h2>
+                <small>Data dari riwayat</small>
+            </div>
+
+            <div class="stat-card">
+                <span>Makanan Aman</span>
+                <h2 id="statSafeFood">0</h2>
+                <small>Berdasarkan hasil scan</small>
+            </div>
+
+            <div class="stat-card">
+                <span>Akan Kadaluarsa</span>
+                <h2 id="statExpiring">0</h2>
+                <small>≤ 3 hari</small>
+            </div>
+
+            <div class="stat-card">
+                <span>Food Waste Saved</span>
+                <h2>12.4 Kg</h2>
+                <small>Bulan ini</small>
+            </div>
+
+        </section>
+
+
+        <!-- DASHBOARD GRID -->
+        <section class="dashboard-grid">
+
+            <!-- KITCHEN SCORE -->
+            <div class="card kitchen-score">
+
+                <div class="card-header">
+                    <h2>Kitchen Score</h2>
+
+                    <span class="badge">
+                        +5 Point
+                    </span>
+                </div>
+
+                <div class="score-circle">
+                    <h1>87</h1>
+                    <span>/100</span>
+                </div>
+
+                <div class="progress">
+                    <div class="progress-fill"
+                    style="width:87%">
+                    </div>
+                </div>
+
+                <p>
+                    Dapur Anda berada dalam kondisi sangat baik.
+                </p>
+
+            </div>
+
+
+            <!-- CHART -->
+            <div class="card">
+
+                <div class="card-header">
+                    <h2>Aktivitas Scan</h2>
+                </div>
+
+                <canvas id="scanChart"></canvas>
+
+            </div>
+
+        </section>
+
+
+        <!-- RECENT SCAN -->
+        <section class="card">
+
+            <div class="card-header">
+
+                <h2>Scan Terbaru</h2>
+
+                <a href="history.html">
+                    Lihat Semua
+                </a>
+
+            </div>
+
+            <div class="recent-grid" id="recentGrid">
+
+                <div class="recent-item">
+                    <div>🍅 Tomat</div>
+                    <span class="danger">1 Hari Lagi</span>
+                </div>
+
+                <div class="recent-item">
+                    <div>🍌 Pisang</div>
+                    <span class="warning">3 Hari Lagi</span>
+                </div>
+
+                <div class="recent-item">
+                    <div>🍎 Apel</div>
+                    <span class="success">7 Hari Lagi</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- INVENTORY -->
+        <section class="card">
+
+            <div class="card-header">
+
+                <h2>Inventory Ringkas</h2>
+
+                <a href="inventory.html">
+                    Kelola
+                </a>
+
+            </div>
+
+            <div class="inventory-preview" id="inventoryPreview">
+
+                <div class="inventory-card">
+                    🍎
+                    <h3>Apel</h3>
+                    <span>5 Buah</span>
+                </div>
+
+                <div class="inventory-card">
+                    🍅
+                    <h3>Tomat</h3>
+                    <span>3 Buah</span>
+                </div>
+
+                <div class="inventory-card">
+                    🥛
+                    <h3>Susu</h3>
+                    <span>2 Kotak</span>
+                </div>
+
+                <div class="inventory-card">
+                    🍌
+                    <h3>Pisang</h3>
+                    <span>8 Buah</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- AI SUMMARY -->
+        <section class="card ai-summary">
+
+            <div class="card-header">
+                <h2>AI Insight</h2>
+            </div>
+
+            <p>
+                Berdasarkan hasil scan minggu ini,
+                terdapat 3 bahan makanan yang akan
+                kedaluwarsa dalam waktu kurang dari
+                3 hari. Disarankan untuk segera
+                digunakan agar mengurangi food waste.
+            </p>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script src="auth.js"></script>
+<script src="dashboard.js"></script>
+
+<script>
+// Initialize theme from localStorage on all pages
+(function() {
+    const theme = localStorage.getItem('nofte-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
+
+<!-- CHART SCRIPT -->
+<script>
+
+const ctx = document.getElementById("scanChart");
+
+new Chart(ctx, {
+    type: "line",
+
+    data: {
+
+        labels: [
+            "Sen",
+            "Sel",
+            "Rab",
+            "Kam",
+            "Jum",
+            "Sab",
+            "Min"
+        ],
+
+        datasets: [{
+
+            label: "Jumlah Scan",
+
+            data: [
+                8,
+                12,
+                7,
+                15,
+                10,
+                17,
+                20
+            ],
+
+            borderColor: "#22c55e",
+
+            backgroundColor:
+            "rgba(34,197,94,0.2)",
+
+            fill: true,
+
+            tension: 0.4
+
+        }]
+    },
+
+    options: {
+
+        responsive: true,
+
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>

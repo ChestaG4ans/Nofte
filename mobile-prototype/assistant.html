@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Assistant</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<div class="app">
+
+<aside class="sidebar">
+
+<div class="logo">
+    <img src="assets/logo.png" class="logo-icon" alt="NoFTe Logo">
+    <span>NoFTe</span>
+</div>
+
+<nav>
+<a href="index.html">🏠 Dashboard</a>
+<a href="scan.html">📷 Scan Makanan</a>
+<a href="history.html">📄 Riwayat</a>
+<a href="expiry.html">⏰ Kadaluarsa</a>
+<a href="inventory.html">📦 Inventory</a>
+<a href="assistant.html" class="active">🤖 AI Assistant</a>
+<a href="settings.html">⚙ Settings</a>
+</nav>
+
+</aside>
+
+<main class="main">
+
+<h1>AI Food Assistant</h1>
+
+<div class="chat-container">
+
+<div id="chatBox" class="chat-box">
+
+<div class="message ai">
+Halo 👋
+Saya siap membantu mengelola makanan Anda.
+</div>
+
+</div>
+
+<div class="chat-input">
+
+<input
+id="chatInput"
+placeholder="Tanyakan sesuatu...">
+
+<button id="sendBtn">
+Kirim
+</button>
+
+</div>
+
+</div>
+
+</main>
+
+</div>
+
+<script src="chat.js"></script>
+
+<script>
+(function() {
+    const theme = localStorage.getItem('nofte-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
+
+</body>
+</html>
+
+<div class="chat-actions">
+    <button onclick="clearChat()">
+        Hapus Riwayat Chat
+    </button>
+</div>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - NoFTe</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="assets/logo.png">
+<script>
+(function() {
+    const theme = localStorage.getItem('nofte-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
+</head>
+<body>
+<div class="app" style="min-height:100vh;display:flex;align-items:center;justify-content:center;">
+    <main class="main" style="max-width:460px;width:100%;">
+        <div class="card">
+            <h1 id="authTitle">Login</h1>
+            <p id="authSubtitle">Masuk untuk melanjutkan ke NoFTe.</p>
+
+            <div id="nameWrap" style="display:none;">
+                <label for="nameInput">Nama</label>
+                <input id="nameInput" type="text" placeholder="Nama kamu">
+            </div>
+
+            <label for="emailInput">Email</label>
+            <input id="emailInput" type="email" placeholder="email@contoh.com">
+
+            <label for="passwordInput">Password</label>
+            <input id="passwordInput" type="password" placeholder="Minimal 8 karakter">
+
+            <p id="authMessage" style="min-height:24px;"></p>
+
+            <button id="submitAuthBtn">Login</button>
+
+            <p>
+                <span id="switchLabel">Belum punya akun?</span>
+                <a href="#" id="switchAuthMode">Daftar</a>
+            </p>
+        </div>
+    </main>
+</div>
+
+<script src="auth.js"></script>
+<script src="login.js"></script>
+</body>
+</html>

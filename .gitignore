@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+.env
+
+# ML Models (will use GitHub LFS)
+*.pt
+*.pth
+*.h5
+*.keras
+
+# Datasets (too large)
+dataset/
+dataset_selected/
+yolo_dataset/
+data/
+weights/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Flutter (build artifacts)
+nofte_flutter/.dart_tool/
+nofte_flutter/build/
+nofte_flutter/.flutter-plugins
+nofte_flutter/.flutter-plugins-dependencies
+nofte_flutter/.packages
+nofte_flutter/pubspec.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Mobile prototype
+mobile-prototype/node_modules/
+mobile-prototype/.expo/
+mobile-prototype/dist/
+
+# Training runs
+runs/
+*.pth.tar

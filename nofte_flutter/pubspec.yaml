@@ -1,0 +1,29 @@
+name: nofte_flutter
+description: NoFTe - Deteksi & Pantau Kesegaran Makanan
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Image picking from camera/gallery
+  image_picker: ^1.1.2
+
+  # HTTP client for API calls
+  http: ^1.2.2
+
+  # Local storage for session
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
