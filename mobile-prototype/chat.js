@@ -1,369 +1,120 @@
-// ====================================
-// NOFTE AI ASSISTANT
-// ====================================
+// Chat JavaScript - Connects to NoFTe Backend
 
-console.log("CHAT.JS LOADED");
-
-// ====================================
-// CONFIG
-// ====================================
-
-const API_URL =
-    "http://localhost:3000/api/chat";
-
-const MAX_RETRIES = 2;
-
-// ====================================
-// ELEMENT
-// ====================================
-
-const chatBox =
-    document.getElementById("chatBox");
-
-const chatInput =
-    document.getElementById("chatInput");
-
-const sendBtn =
-    document.getElementById("sendBtn");
-
-// ====================================
-// STATE
-// ====================================
+const chatBox = document.getElementById("chatBox");
+const chatInput = document.getElementById("chatInput");
+const sendBtn = document.getElementById("sendBtn");
 
 let isLoading = false;
 
-// ====================================
-// EVENT
-// ====================================
+if (sendBtn) {
+    sendBtn.addEventListener("click", sendMessage);
+}
 
-sendBtn.addEventListener(
-    "click",
-    sendMessage
-);
-
-chatInput.addEventListener(
-    "keydown",
-    (e) => {
-
+if (chatInput) {
+    chatInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
-
             sendMessage();
-
         }
+    });
+}
 
-    }
-);
-
-// ====================================
-// LOAD HISTORY
-// ====================================
-
-loadHistory();
-
-// ====================================
-// SEND MESSAGE
-// ====================================
+// Load chat history
+loadChatHistory();
 
 async function sendMessage() {
-
     if (isLoading) return;
 
-    const message =
-        chatInput.value.trim();
+    const message = chatInput ? chatInput.value.trim() : "";
+    if (!message) return;
 
-    if (!message)
-        return;
+    isLoading = true;
+    if (sendBtn) sendBtn.disabled = true;
 
-    // Disable input saat loading
-    setLoading(true);
+    addMessage(escapeHtml(message), "user");
+    if (chatInput) chatInput.value = "";
 
-    addMessage(
-        escapeHtml(message),
-        "user"
-    );
+    const loading = addMessage("&#129300; Memikirkan jawaban...", "ai");
 
-    chatInput.value = "";
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        });
 
-    const loading =
-        addMessage(
-            "🤔 Memikirkan jawaban...",
-            "ai"
-        );
+        if (loading.parentNode) loading.remove();
 
-    let success = false;
-
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-
-        try {
-
-            const response =
-                await fetch(
-                    API_URL,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body: JSON.stringify({
-                            message
-                        })
-                    }
-                );
-
-            const data =
-                await response.json();
-
-            loading.remove();
-
-            if (!response.ok) {
-
-                addMessage(
-                    `❌ Error: ${data.error || "Terjadi kesalahan"}`,
-                    "ai"
-                );
-
-            } else {
-
-                addMessage(
-                    formatAIResponse(data.reply || "Tidak ada jawaban."),
-                    "ai"
-                );
-
-                success = true;
-
-            }
-
-            break;
-
-        } catch (err) {
-
-            console.error(`Attempt ${attempt + 1} failed:`, err);
-
-            if (attempt === MAX_RETRIES) {
-
-                loading.remove();
-
-                addMessage(
-                    "❌ Gagal terhubung ke server. Pastikan server berjalan di localhost:3000",
-                    "ai"
-                );
-
-            } else {
-
-                loading.innerHTML =
-                    `🔄 Mencoba ulang... (${attempt + 1}/${MAX_RETRIES})`;
-
-                await sleep(1000);
-
-            }
-
+        if (!response.ok) {
+            const data = await response.json();
+            addMessage(`&#9888; Error: ${data.error || "Terjadi kesalahan"}`, "ai");
+        } else {
+            const data = await response.json();
+            addMessage(formatAIResponse(data.reply || "Tidak ada jawaban."), "ai");
         }
 
+    } catch (err) {
+        console.error("Chat Error:", err);
+        if (loading.parentNode) loading.remove();
+        addMessage("&#9888; Gagal terhubung ke server. Pastikan backend NoFTe berjalan.", "ai");
     }
 
-    setLoading(false);
-
-    saveHistory();
-
+    isLoading = false;
+    if (sendBtn) sendBtn.disabled = false;
+    saveChatHistory();
 }
-
-// ====================================
-// SET LOADING STATE
-// ====================================
-
-function setLoading(loading) {
-
-    isLoading = loading;
-
-    chatInput.disabled = loading;
-    sendBtn.disabled = loading;
-
-    chatInput.placeholder =
-        loading
-            ? "Menunggu jawaban..."
-            : "Tanyakan sesuatu...";
-
-}
-
-// ====================================
-// FORMAT AI RESPONSE
-// ====================================
 
 function formatAIResponse(text) {
-
-    // Escape HTML dulu
-    let formatted =
-        escapeHtml(text);
-
-    // Format bullet points
-    formatted =
-        formatted.replace(
-            /^[•\-*]\s+(.+)$/gm,
-            "• $1"
-        );
-
-    // Format numbered lists
-    formatted =
-        formatted.replace(
-            /^(\d+)\.\s+(.+)$/gm,
-            "<strong>$1.</strong> $2"
-        );
-
-    // Bold text (**text**)
-    formatted =
-        formatted.replace(
-            /\*\*(.+?)\*\*/g,
-            "<strong>$1</strong>"
-        );
-
-    // Italic text (*text*)
-    formatted =
-        formatted.replace(
-            /\*(.+?)\*/g,
-            "<em>$1</em>"
-        );
-
-    // Code blocks
-    formatted =
-        formatted.replace(
-            /`([^`]+)`/g,
-            "<code>$1</code>"
-        );
-
-    // Newlines ke <br>
-    formatted =
-        formatted.replace(
-            /\n/g,
-            "<br>"
-        );
-
+    let formatted = escapeHtml(text);
+    formatted = formatted.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    formatted = formatted.replace(/\*(.+?)\*/g, "<em>$1</em>");
+    formatted = formatted.replace(/`([^`]+)`/g, "<code style='background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;'>$1</code>");
+    formatted = formatted.replace(/\n/g, "<br>");
     return formatted;
-
 }
-
-// ====================================
-// ESCAPE HTML
-// ====================================
 
 function escapeHtml(text) {
-
-    const div =
-        document.createElement("div");
-
+    if (!text) return "";
+    const div = document.createElement("div");
     div.textContent = text;
-
     return div.innerHTML;
-
 }
 
-// ====================================
-// SLEEP
-// ====================================
+function addMessage(html, type) {
+    if (!chatBox) return null;
 
-function sleep(ms) {
-
-    return new Promise(
-        resolve =>
-            setTimeout(resolve, ms)
-    );
-
-}
-
-// ====================================
-// ADD MESSAGE
-// ====================================
-
-function addMessage(
-    html,
-    type
-) {
-
-    const div =
-        document.createElement(
-            "div"
-        );
-
-    div.className =
-        `message ${type}`;
-
+    const div = document.createElement("div");
+    div.className = `message ${type}`;
     div.innerHTML = html;
-
-    chatBox.appendChild(
-        div
-    );
-
-    scrollBottom();
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
 
     return div;
-
 }
 
-// ====================================
-// SCROLL
-// ====================================
-
-function scrollBottom() {
-
-    chatBox.scrollTop =
-        chatBox.scrollHeight;
-
-}
-
-// ====================================
-// SAVE HISTORY
-// ====================================
-
-function saveHistory() {
-
-    localStorage.setItem(
-        "nofte_chat",
-        chatBox.innerHTML
-    );
-
-}
-
-// ====================================
-// LOAD HISTORY
-// ====================================
-
-function loadHistory() {
-
-    const history =
-        localStorage.getItem(
-            "nofte_chat"
-        );
-
-    if (history) {
-
-        chatBox.innerHTML =
-            history;
-
+function saveChatHistory() {
+    if (chatBox) {
+        localStorage.setItem("nofte_chat", chatBox.innerHTML);
     }
-
 }
 
-// ====================================
-// CLEAR CHAT
-// ====================================
+function loadChatHistory() {
+    const history = localStorage.getItem("nofte_chat");
+    if (history && chatBox) {
+        chatBox.innerHTML = history;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+}
 
 function clearChat() {
-
-    localStorage.removeItem(
-        "nofte_chat"
-    );
-
-    chatBox.innerHTML =
-        `
-        <div class="message ai">
-            Halo 👋<br>
-            Saya siap membantu Anda.
-        </div>
+    localStorage.removeItem("nofte_chat");
+    if (chatBox) {
+        chatBox.innerHTML = `
+            <div class="message ai">
+                &#128075; Halo!<br><br>
+                Saya siap membantu Anda.
+            </div>
         `;
-
+    }
 }
 
-window.clearChat =
-    clearChat;
+window.clearChat = clearChat;
