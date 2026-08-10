@@ -11,6 +11,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
+  # SVG Support
+  flutter_svg: ^2.0.10+1
+
   # Image picking from camera/gallery
   image_picker: ^1.1.2
 
@@ -20,6 +23,12 @@ dependencies:
   # Local storage for session
   shared_preferences: ^2.3.2
 
+  # Provider for state management
+  provider: ^6.1.2
+
+  # Google Fonts
+  google_fonts: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -27,3 +36,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/logo/

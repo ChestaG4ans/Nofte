@@ -4,3 +4,4 @@ export 'scan_service.dart';
 export 'history_service.dart';
 export 'inventory_service.dart';
 export 'chat_service.dart';
+export 'gemini_recipe_service.dart';

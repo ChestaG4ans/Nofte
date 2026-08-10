@@ -1,622 +1,540 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-
-import '../models/models.dart';
-import '../services/services.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_widgets.dart';
 
 class ScanScreen extends StatefulWidget {
-  final ScanService scanService;
-  final InventoryService inventoryService;
-
-  const ScanScreen({
-    super.key,
-    required this.scanService,
-    required this.inventoryService,
-  });
+  const ScanScreen({super.key});
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  final ImagePicker _picker = ImagePicker();
-
-  XFile? _image;
-  Uint8List? _imageBytes;  // Store image bytes for cross-platform display
-  bool _isLoadingImage = false;  // Track image loading state
-  List<FoodItem> _foods = [];
   bool _isScanning = false;
-  String _statusMessage = 'Ambil foto makanan untuk dipindai';
-  String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scan Makanan'),
-        actions: [
-          if (_image != null)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _reset,
-              tooltip: 'Reset',
-            ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        return Scaffold(
+          backgroundColor: AppColors.primaryDark,
+          body: Column(
             children: [
-              // Image Preview
-              AspectRatio(
-                aspectRatio: 3 / 4,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: _isLoadingImage
-                        ? const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(),
-                                SizedBox(height: 12),
-                                Text('Memuat foto...'),
-                              ],
-                            ),
-                          )
-                        : _image == null
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.camera_alt_outlined,
-                                      size: 64,
-                                      color: Colors.grey[400],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Belum ada foto',
-                                      style: TextStyle(color: Colors.grey[500]),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : _buildImageWidget(),
-                  ),
+              // Header
+              Container(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => appState.setIndex(0),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white12,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Scan Bahan Makanan',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Image Source Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _isLoadingImage || _isScanning ? null : () => _pickImage(ImageSource.camera),
-                      icon: const Icon(Icons.camera_alt),
-                      label: const Text('Kamera'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _isLoadingImage || _isScanning ? null : () => _pickImage(ImageSource.gallery),
-                      icon: const Icon(Icons.photo_library),
-                      label: const Text('Galeri'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Scan Button
-              FilledButton.icon(
-                onPressed: _image == null || _isScanning || _isLoadingImage ? null : _scan,
-                icon: _isScanning
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
+              // Camera View
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Background
+                    Center(
+                      child: Opacity(
+                        opacity: 0.08,
+                        child: Icon(
+                          Icons.kitchen_rounded,
+                          size: 200,
                           color: Colors.white,
                         ),
-                      )
-                    : const Icon(Icons.search),
-                label: Text(_isScanning ? 'Memindai...' : 'Scan Makanan'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Status/Error Message
-              if (_errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red[700]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: Colors.red[700]),
+                      ),
+                    ),
+                    // Scan Frame
+                    Center(
+                      child: SizedBox(
+                        width: 220,
+                        height: 220,
+                        child: Stack(
+                          children: [
+                            // Corner brackets
+                            Positioned(
+                              top: 0,
+                              left: 0,
+                              child: _buildCorner(true, true),
+                            ),
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: _buildCorner(true, false),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              child: _buildCorner(false, true),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: _buildCorner(false, false),
+                            ),
+                            // Scanning line
+                            if (_isScanning)
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 0, end: 1),
+                                duration: const Duration(milliseconds: 2500),
+                                builder: (context, value, child) {
+                                  return Positioned(
+                                    top: value * 220,
+                                    left: 0,
+                                    right: 0,
+                                    child: Container(
+                                      height: 2,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.transparent,
+                                            AppColors.teal,
+                                            Colors.transparent,
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                onEnd: () {
+                                  if (mounted) {
+                                    setState(() => _isScanning = false);
+                                    _showScanResults(context, appState);
+                                  }
+                                },
+                              ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // Status
-              Text(
-                _statusMessage,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-
-              // Results
-              if (_foods.isNotEmpty) ...[
-                const Divider(),
-                const SizedBox(height: 8),
-                Text(
-                  'Hasil Scan (${_foods.length})',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    ),
+                    // Detection Labels
+                    Positioned(
+                      left: 20,
+                      top: 80,
+                      child: _buildDetectionLabel('Brokoli 78%', true),
+                    ),
+                    Positioned(
+                      right: 20,
+                      top: 150,
+                      child: _buildDetectionLabel('Bayam 65%', false),
+                    ),
+                    // Instruction
+                    Positioned(
+                      bottom: 60,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Text(
+                          _isScanning ? 'Memindai...' : 'Arahkan ke isi kulkas',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white54,
+                          ),
+                        ),
                       ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                ..._foods.asMap().entries.map((entry) {
-                  return FoodResultCard(
-                    food: entry.value,
-                    index: entry.key,
-                    onAddToInventory: () => _addToInventory(entry.value),
-                  );
-                }),
-              ],
+              ),
+              // Mode Selection
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                color: Colors.black38,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildModeButton('Kamera', true),
+                    const SizedBox(width: 8),
+                    _buildModeButton('Galeri', false),
+                    const SizedBox(width: 8),
+                    _buildModeButton('Manual', false),
+                  ],
+                ),
+              ),
+              // Capture Button
+              Container(
+                padding: const EdgeInsets.all(20),
+                color: Colors.black38,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white10,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: const Icon(
+                        Icons.edit_outlined,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() => _isScanning = true);
+                      },
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(32),
+                          border: Border.all(color: Colors.white30, width: 3),
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppColors.teal,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white10,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: const Icon(
+                        Icons.flip_camera_ios_outlined,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCorner(bool top, bool left) {
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: AppColors.teal,
+            width: 3,
+          ),
+          left: BorderSide(
+            color: AppColors.teal,
+            width: 3,
+          ),
+        ),
+        borderRadius: top
+            ? (left ? const BorderRadius.only(topLeft: Radius.circular(4)) : const BorderRadius.only(topRight: Radius.circular(4)))
+            : (left ? const BorderRadius.only(bottomLeft: Radius.circular(4)) : const BorderRadius.only(bottomRight: Radius.circular(4))),
+      ),
+    );
+  }
+
+  Widget _buildDetectionLabel(String text, bool isHigh) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.teal.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: AppColors.primaryDark,
         ),
       ),
     );
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      setState(() => _isLoadingImage = true);
-
-      final picked = await _picker.pickImage(
-        source: source,
-        imageQuality: 85,
-        maxWidth: 1024,
-        maxHeight: 1024,
-      );
-
-      if (picked != null) {
-        // Read image bytes for cross-platform display
-        final bytes = await picked.readAsBytes();
-        debugPrint('Image picked: ${picked.path}, bytes length: ${bytes.length}');
-
-        if (bytes.isEmpty) {
-          setState(() {
-            _errorMessage = 'Gambar kosong, coba lagi';
-            _isLoadingImage = false;
-          });
-          return;
-        }
-
-        setState(() {
-          _image = picked;
-          _imageBytes = bytes;
-          _foods = [];
-          _errorMessage = null;
-          _statusMessage = 'Foto siap dipindai';
-          _isLoadingImage = false;
-        });
-      } else {
-        setState(() => _isLoadingImage = false);
-      }
-    } catch (e) {
-      debugPrint('Error picking image: $e');
-      setState(() {
-        _errorMessage = 'Gagal mengambil foto: $e';
-        _isLoadingImage = false;
-      });
-    }
-  }
-
-  /// Build image widget that works on all platforms (mobile & web)
-  Widget _buildImageWidget() {
-    if (_imageBytes == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    debugPrint('Building image widget with ${_imageBytes!.length} bytes');
-
-    return Image.memory(
-      _imageBytes!,
-      fit: BoxFit.contain,
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded) return child;
-        return AnimatedOpacity(
-          opacity: frame == null ? 0 : 1,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-          child: child,
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        debugPrint('Image error: $error');
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.broken_image, size: 48, color: Colors.grey[400]),
-              const SizedBox(height: 8),
-              Text('Gagal memuat foto', style: TextStyle(color: Colors.grey[500])),
-              const SizedBox(height: 4),
-              Text(
-                'Error: $error',
-                style: TextStyle(color: Colors.grey[400], fontSize: 10),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _scan() async {
-    if (_image == null) return;
-
-    setState(() {
-      _isScanning = true;
-      _errorMessage = null;
-      _statusMessage = 'Memindai...';
-      _foods = [];
-    });
-
-    try {
-      final foods = await widget.scanService.scanImage(_image!);
-      setState(() {
-        _foods = foods;
-        _statusMessage = foods.isEmpty
-            ? 'Tidak ada makanan terdeteksi'
-            : 'Ditemukan ${foods.length} makanan';
-      });
-    } on ApiException catch (e) {
-      setState(() {
-        _errorMessage = e.message;
-        _statusMessage = 'Scan gagal';
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Terjadi kesalahan: $e';
-        _statusMessage = 'Scan gagal';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isScanning = false);
-      }
-    }
-  }
-
-  Future<void> _addToInventory(FoodItem food) async {
-    try {
-      await widget.inventoryService.addFromScan(
-        name: food.name,
-        expiryDays: food.shelfLife,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${food.name} ditambahkan ke inventory'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal: ${e.message}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
-
-  void _reset() {
-    setState(() {
-      _image = null;
-      _imageBytes = null;
-      _foods = [];
-      _errorMessage = null;
-      _isLoadingImage = false;
-      _statusMessage = 'Ambil foto makanan untuk dipindai';
-    });
-  }
-}
-
-class FoodResultCard extends StatelessWidget {
-  final FoodItem food;
-  final int index;
-  final VoidCallback onAddToInventory;
-
-  const FoodResultCard({
-    super.key,
-    required this.food,
-    required this.index,
-    required this.onAddToInventory,
-  });
-
-  Color get _freshnessColor {
-    switch (food.freshness.toLowerCase()) {
-      case 'segar':
-        return Colors.green;
-      case 'perlu dicek':
-        return Colors.orange;
-      case 'tidak segar':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String get _freshnessEmoji {
-    switch (food.freshness.toLowerCase()) {
-      case 'segar':
-        return '✅';
-      case 'perlu dicek':
-        return '⚠️';
-      case 'tidak segar':
-        return '❌';
-      default:
-        return '❓';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: _freshnessColor.withValues(alpha: 0.2),
-                  child: Text(
-                    '${index + 1}',
-                    style: TextStyle(
-                      color: _freshnessColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        food.name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      Row(
-                        children: [
-                          Text(_freshnessEmoji),
-                          const SizedBox(width: 4),
-                          Text(
-                            food.freshness,
-                            style: TextStyle(color: _freshnessColor),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (food.confidence != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${(food.confidence! * 100).toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        color: Colors.blue[700],
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-
-            // Info Grid
-            Row(
-              children: [
-                Expanded(
-                  child: _InfoItem(
-                    icon: Icons.timer_outlined,
-                    label: 'Daya Simpan',
-                    value: '${food.shelfLife} hari',
-                  ),
-                ),
-                Expanded(
-                  child: _InfoItem(
-                    icon: Icons.source_outlined,
-                    label: 'Sumber',
-                    value: food.decisionSource ?? '-',
-                  ),
-                ),
-              ],
-            ),
-
-            // Nutrition Info
-            if (food.nutrition != null) ...[
-              const SizedBox(height: 12),
-              ExpansionTile(
-                title: const Text('Info Nutrisi'),
-                tilePadding: EdgeInsets.zero,
-                childrenPadding: const EdgeInsets.only(top: 8),
+  void _showScanResults(BuildContext context, AppState appState) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (food.nutrition!.calories != null)
-                        _NutritionChip(
-                          label: 'Kalori',
-                          value: '${food.nutrition!.calories!.toStringAsFixed(0)} kcal',
+                      const Text(
+                        'Hasil Scan',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
-                      if (food.nutrition!.proteinG != null)
-                        _NutritionChip(
-                          label: 'Protein',
-                          value: '${food.nutrition!.proteinG!.toStringAsFixed(1)}g',
+                      ),
+                      Text(
+                        'Diproses 4.2 dtk',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.teal,
                         ),
-                      if (food.nutrition!.carbohydratesG != null)
-                        _NutritionChip(
-                          label: 'Karbo',
-                          value: '${food.nutrition!.carbohydratesG!.toStringAsFixed(1)}g',
-                        ),
-                      if (food.nutrition!.fiberG != null)
-                        _NutritionChip(
-                          label: 'Serat',
-                          value: '${food.nutrition!.fiberG!.toStringAsFixed(1)}g',
-                        ),
+                      ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Stats
+                  Row(
+                    children: [
+                      _buildStatBox('${appState.freshCount}', 'Segar', AppColors.tealDark),
+                      const SizedBox(width: 8),
+                      _buildStatBox('${appState.soonCount}', 'Segera', const Color(0xFFFAC775)),
+                      const SizedBox(width: 8),
+                      _buildStatBox('${appState.criticalCount}', 'Kritis', AppColors.danger),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Food List
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        const Text(
+                          'BAHAN',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...appState.foodItems.map((item) => _buildFoodItem(item)),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            appState.setIndex(2);
+                          },
+                          child: const Text('Lihat Rekomendasi Resep AI'),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ],
-
-            const SizedBox(height: 12),
-
-            // Add to Inventory Button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onAddToInventory,
-                icon: const Icon(Icons.add_shopping_cart),
-                label: Text('Tambah ke Inventory (${food.shelfLife} hari)'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.green[700],
-                  side: BorderSide(color: Colors.green[700]!),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
-}
 
-class _InfoItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _InfoItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Colors.grey[600]),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildStatBox(String value, String label, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(9),
+        decoration: BoxDecoration(
+          color: Colors.white10,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white12, width: 0.5),
+        ),
+        child: Column(
           children: [
             Text(
-              label,
+              value,
               style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[500],
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: color,
               ),
             ),
+            const SizedBox(height: 2),
             Text(
-              value,
+              label,
               style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+                fontSize: 8.5,
+                color: Colors.white60,
               ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
-}
 
-class _NutritionChip extends StatelessWidget {
-  final String label;
-  final String value;
+  Widget _buildFoodItem(FoodItemUI item) {
+    Color statusColor = AppColors.tealDark;
+    Color statusBg = AppColors.freshBg;
+    String statusLabel = 'Segar';
+    double progress = 0.78;
 
-  const _NutritionChip({
-    required this.label,
-    required this.value,
-  });
+    switch (item.status) {
+      case StatusType.fresh:
+        statusColor = AppColors.tealDark;
+        statusBg = AppColors.freshBg;
+        statusLabel = 'Segar';
+        progress = 0.78;
+      case StatusType.soon:
+        statusColor = const Color(0xFFFAC775);
+        statusBg = AppColors.soonBg;
+        statusLabel = 'Segera';
+        progress = 0.40;
+      case StatusType.critical:
+        statusColor = AppColors.danger;
+        statusBg = AppColors.criticalBg;
+        statusLabel = 'Kritis';
+        progress = 0.10;
+      case StatusType.purple:
+        statusColor = AppColors.purpleText;
+        statusBg = AppColors.purpleBg;
+        statusLabel = 'AI';
+        progress = 0.60;
+      case StatusType.blue:
+        statusColor = AppColors.blueText;
+        statusBg = AppColors.blueBg;
+        statusLabel = 'Info';
+        progress = 0.50;
+    }
 
-  @override
-  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(
+          color: item.status == StatusType.critical
+              ? AppColors.criticalBg
+              : AppColors.border,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: statusBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(item.emoji, style: const TextStyle(fontSize: 20)),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      item.daysLeft == 0 ? 'Hari ini' : '${item.daysLeft} hari',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: statusColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 9),
+          StatusPill(label: statusLabel, type: item.status),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeButton(String label, bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: isActive ? AppColors.teal : Colors.white10,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        '$label: $value',
-        style: const TextStyle(fontSize: 12),
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: isActive ? AppColors.primaryDark : Colors.white60,
+        ),
       ),
     );
   }
