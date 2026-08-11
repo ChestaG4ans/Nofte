@@ -177,6 +177,14 @@
 
 <script src="auth.js"></script>
 <script>
+// Apply saved theme on load
+(function() {
+    const savedTheme = localStorage.getItem('nofte-theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+})();
+
 let isRegisterMode = false;
 
 const authTitle = document.getElementById("authTitle");
@@ -251,6 +259,30 @@ async function submitAuth() {
     showMessage(isRegisterMode ? "Memproses pendaftaran..." : "Memproses login...", "");
 
     try {
+        // Check if we're in demo mode (no backend)
+        if (typeof API_BASE_URL === 'undefined' || API_BASE_URL === null) {
+            // Demo mode - use localStorage simulation
+            if (isRegisterMode) {
+                const user = saveDemoUser(name, email);
+                showMessage("Registrasi berhasil (Demo)!", "success");
+                setTimeout(() => {
+                    window.location.href = "index.html";
+                }, 500);
+            } else {
+                if (validateDemoLogin(email, password)) {
+                    const user = saveDemoUser("User", email);
+                    showMessage("Login berhasil (Demo)!", "success");
+                    setTimeout(() => {
+                        window.location.href = "index.html";
+                    }, 500);
+                } else {
+                    throw new Error("Email atau password salah.");
+                }
+            }
+            return;
+        }
+
+        // Real backend mode
         if (isRegisterMode) {
             // Register first
             const registerResponse = await fetch(`${API_BASE_URL}/auth/register`, {

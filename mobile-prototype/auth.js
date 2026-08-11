@@ -1,8 +1,17 @@
 // NoFTe API Configuration
-const API_BASE_URL = "http://localhost:8000";
-const CHAT_API_URL = "http://localhost:3000";
+// For static hosting (Cloudflare Pages), we use localStorage simulation
+// For backend mode, set API_BASE_URL to your server
+
 const TOKEN_KEY = "nofte_access_token";
 const USER_KEY = "nofte_user";
+
+// API URLs - Fallback ke demo mode jika tidak ada backend
+const API_BASE_URL = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
+    ? "http://localhost:8000"
+    : null; // Null means demo mode (no backend)
+const CHAT_API_URL = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
+    ? "http://localhost:3000"
+    : null;
 
 // =========================
 // TOKEN MANAGEMENT
@@ -51,10 +60,35 @@ function logout() {
 }
 
 // =========================
+// DEMO MODE HELPERS
+// =========================
+
+function isDemoMode() {
+    return API_BASE_URL === null;
+}
+
+function saveDemoUser(name, email) {
+    const demoUser = { name, email, isDemo: true };
+    setUser(demoUser);
+    setToken('demo_token_' + Date.now());
+    return demoUser;
+}
+
+function validateDemoLogin(email, password) {
+    // Demo mode: accept any valid email format with password >= 8 chars
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && password.length >= 8;
+}
+
+// =========================
 // API HELPERS
 // =========================
 
 async function apiRequest(endpoint, options = {}) {
+    if (isDemoMode()) {
+        throw new Error('Demo mode: No backend available');
+    }
+
     const token = getToken();
     const headers = {
         'Content-Type': 'application/json',
