@@ -1,11 +1,17 @@
 // NoFTe Notification System
+// Connects to backend at localhost:8000
 
 let expiringItems = [];
 let notificationCount = 0;
 
-// Fallback functions if auth.js not loaded
+// =========================
+// API CONFIG
+// =========================
+
+const API_BASE_URL = "http://localhost:8000";
+
 function getToken() {
-    return localStorage.getItem('auth_token') || null;
+    return localStorage.getItem('nofte_access_token') || null;
 }
 
 async function apiRequest(endpoint, options = {}) {
@@ -24,6 +30,10 @@ async function apiRequest(endpoint, options = {}) {
     });
     return response;
 }
+
+// =========================
+// NOTIFICATION FUNCTIONS
+// =========================
 
 // Initialize notifications on page load
 document.addEventListener("DOMContentLoaded", async () => {

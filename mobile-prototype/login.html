@@ -259,33 +259,12 @@ async function submitAuth() {
     showMessage(isRegisterMode ? "Memproses pendaftaran..." : "Memproses login...", "");
 
     try {
-        // Check if we're in demo mode (no backend)
-        if (typeof API_BASE_URL === 'undefined' || API_BASE_URL === null) {
-            // Demo mode - use localStorage simulation
-            if (isRegisterMode) {
-                const user = saveDemoUser(name, email);
-                showMessage("Registrasi berhasil (Demo)!", "success");
-                setTimeout(() => {
-                    window.location.href = "index.html";
-                }, 500);
-            } else {
-                if (validateDemoLogin(email, password)) {
-                    const user = saveDemoUser("User", email);
-                    showMessage("Login berhasil (Demo)!", "success");
-                    setTimeout(() => {
-                        window.location.href = "index.html";
-                    }, 500);
-                } else {
-                    throw new Error("Email atau password salah.");
-                }
-            }
-            return;
-        }
+        // Backend API URL
+        const BACKEND_URL = "http://localhost:8000";
 
-        // Real backend mode
         if (isRegisterMode) {
             // Register first
-            const registerResponse = await fetch(`${API_BASE_URL}/auth/register`, {
+            const registerResponse = await fetch(`${BACKEND_URL}/auth/register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -304,7 +283,7 @@ async function submitAuth() {
         }
 
         // Then login
-        const loginResponse = await fetch(`${API_BASE_URL}/auth/login`, {
+        const loginResponse = await fetch(`${BACKEND_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password })
@@ -322,7 +301,7 @@ async function submitAuth() {
 
         // Fetch user info
         try {
-            const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+            const userResponse = await fetch(`${BACKEND_URL}/auth/me`, {
                 headers: { "Authorization": `Bearer ${loginData.access_token}` }
             });
             if (userResponse.ok) {
@@ -338,7 +317,7 @@ async function submitAuth() {
         }, 500);
 
     } catch (error) {
-        showMessage(error.message || "Terjadi kesalahan.", "error");
+        showMessage(error.message || "Terjadi kesalahan. Pastikan backend NoFTe berjalan di port 8000.", "error");
         submitAuthBtn.disabled = false;
     }
 }
