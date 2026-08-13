@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 
@@ -20,11 +20,8 @@ if (!API_KEY) {
     process.exit(1);
 }
 
-const genAI = new GoogleGenerativeAI(API_KEY);
-
-// Get the model
-const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
+const ai = new GoogleGenAI({
+    apiKey: API_KEY,
 });
 
 // AI Chat endpoint
@@ -42,9 +39,12 @@ app.post("/api/chat", async (req, res) => {
 Pertanyaan pengguna: ${message}`;
 
         // Generate response using SDK
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const reply = response.text();
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+        });
+
+        const reply = response.text;
 
         res.json({ reply });
 
@@ -67,6 +67,6 @@ app.listen(PORT, () => {
     console.log("=".repeat(40));
     console.log(`🌐 URL: http://localhost:${PORT}`);
     console.log(`📝 API Key: ✓ Terkonfigurasi`);
-    console.log(`🤖 Model: gemini-2.0-flash`);
+    console.log(`🤖 Model: gemini-2.5-flash`);
     console.log("=".repeat(40));
 });
