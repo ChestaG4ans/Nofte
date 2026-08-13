@@ -13,15 +13,16 @@ app.use(express.json());
 // Serve static files from current directory
 app.use(express.static(__dirname));
 
-// Initialize OpenAI
-const API_KEY = process.env.OPENAI_API_KEY;
+// Initialize Groq (OpenAI-compatible)
+const API_KEY = process.env.GROQ_API_KEY;
 if (!API_KEY) {
-    console.error("OPENAI_API_KEY not found in .env file!");
+    console.error("GROQ_API_KEY not found in .env file!");
     process.exit(1);
 }
 
 const client = new OpenAI({
     apiKey: API_KEY,
+    baseURL: "https://api.groq.com/openai/v1",
 });
 
 // AI Chat endpoint
@@ -33,14 +34,9 @@ app.post("/api/chat", async (req, res) => {
             return res.status(400).json({ error: "Pesan kosong" });
         }
 
-        // Create prompt with system instructions
-        const prompt = `Kamu adalah asisten dapur pintar bernama NOFTe. Kamu membantu pengguna mengelola bahan makanan, memberikan saran resep, dan tips memasak. Selalu jawab dalam Bahasa Indonesia yang sopan dan ramah.
-
-Pertanyaan pengguna: ${message}`;
-
-        // Generate response using OpenAI API
+        // Generate response using Groq API
         const response = await client.chat.completions.create({
-            model: "gpt-4o-mini",
+            model: "llama-3.1-8b-instant",
             messages: [
                 {
                     role: "system",
@@ -78,6 +74,6 @@ app.listen(PORT, () => {
     console.log("=".repeat(40));
     console.log(`🌐 URL: http://localhost:${PORT}`);
     console.log(`📝 API Key: ✓ Terkonfigurasi`);
-    console.log(`🤖 Model: gpt-4o-mini`);
+    console.log(`🤖 Model: llama-3.1-8b-instant (Groq)`);
     console.log("=".repeat(40));
 });
