@@ -12,7 +12,11 @@ app.use(express.json());
 // Serve static files from current directory
 app.use(express.static(__dirname));
 
-const API_KEY = process.env.GEMINI_API_KEY || "AIzaSyDAQ.Ab8RN6ITgEZPCZyJ9tgtwDik8bKwRLHq2HXh5cNahrKJAoWmcw";
+const API_KEY = process.env.GEMINI_API_KEY;
+if (!API_KEY) {
+    console.error("GEMINI_API_KEY not found in .env file!");
+    process.exit(1);
+}
 
 // AI Chat endpoint
 app.post("/api/chat", async (req, res) => {
