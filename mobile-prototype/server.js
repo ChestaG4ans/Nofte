@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const { GoogleGenAI } = require("@google/genai");
+const OpenAI = require("openai");
 
 const app = express();
 
@@ -13,14 +13,14 @@ app.use(express.json());
 // Serve static files from current directory
 app.use(express.static(__dirname));
 
-// Initialize Gemini AI
-const API_KEY = process.env.GEMINI_API_KEY;
+// Initialize OpenAI
+const API_KEY = process.env.OPENAI_API_KEY;
 if (!API_KEY) {
-    console.error("GEMINI_API_KEY not found in .env file!");
+    console.error("OPENAI_API_KEY not found in .env file!");
     process.exit(1);
 }
 
-const ai = new GoogleGenAI({
+const client = new OpenAI({
     apiKey: API_KEY,
 });
 
@@ -38,13 +38,24 @@ app.post("/api/chat", async (req, res) => {
 
 Pertanyaan pengguna: ${message}`;
 
-        // Generate response using SDK
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
+        // Generate response using OpenAI API
+        const response = await client.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                {
+                    role: "system",
+                    content: "Kamu adalah asisten dapur pintar bernama NOFTe. Kamu membantu pengguna mengelola bahan makanan, memberikan saran resep, dan tips memasak. Selalu jawab dalam Bahasa Indonesia yang sopan dan ramah."
+                },
+                {
+                    role: "user",
+                    content: message
+                }
+            ],
+            max_tokens: 500,
+            temperature: 0.7,
         });
 
-        const reply = response.text;
+        const reply = response.choices[0].message.content;
 
         res.json({ reply });
 
@@ -67,6 +78,6 @@ app.listen(PORT, () => {
     console.log("=".repeat(40));
     console.log(`🌐 URL: http://localhost:${PORT}`);
     console.log(`📝 API Key: ✓ Terkonfigurasi`);
-    console.log(`🤖 Model: gemini-2.5-flash`);
+    console.log(`🤖 Model: gpt-4o-mini`);
     console.log("=".repeat(40));
 });
