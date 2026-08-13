@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 
@@ -12,11 +13,19 @@ app.use(express.json());
 // Serve static files from current directory
 app.use(express.static(__dirname));
 
+// Initialize Gemini AI
 const API_KEY = process.env.GEMINI_API_KEY;
 if (!API_KEY) {
     console.error("GEMINI_API_KEY not found in .env file!");
     process.exit(1);
 }
+
+const genAI = new GoogleGenerativeAI(API_KEY);
+
+// Get the model
+const model = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+});
 
 // AI Chat endpoint
 app.post("/api/chat", async (req, res) => {
@@ -27,35 +36,15 @@ app.post("/api/chat", async (req, res) => {
             return res.status(400).json({ error: "Pesan kosong" });
         }
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `Kamu adalah asisten dapur pintar bernama NOFTe. Kamu membantu pengguna mengelola bahan makanan, memberikan saran resep, dan tips memasak. Selalu jawab dalam Bahasa Indonesia yang sopan dan ramah.\n\nPertanyaan pengguna: ${message}`
-                        }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 500
-                    }
-                })
-            }
-        );
+        // Create prompt with system instructions
+        const prompt = `Kamu adalah asisten dapur pintar bernama NOFTe. Kamu membantu pengguna mengelola bahan makanan, memberikan saran resep, dan tips memasak. Selalu jawab dalam Bahasa Indonesia yang sopan dan ramah.
 
-        const data = await response.json();
+Pertanyaan pengguna: ${message}`;
 
-        let reply = "Maaf, saya tidak dapat menjawab saat ini.";
-
-        if (data.candidates && data.candidates.length > 0) {
-            reply = data.candidates[0].content.parts[0].text;
-        } else if (data.error) {
-            console.error("Gemini API Error:", data.error);
-            reply = `Error: ${data.error.message || "Terjadi kesalahan pada API"}`;
-        }
+        // Generate response using SDK
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const reply = response.text();
 
         res.json({ reply });
 
@@ -74,9 +63,10 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log("=".repeat(40));
-    console.log("🍳 NOFTe Server Berjalan");
+    console.log("🍳 NOFTe AI Server Berjalan");
     console.log("=".repeat(40));
     console.log(`🌐 URL: http://localhost:${PORT}`);
-    console.log(`📝 API Key: ${API_KEY ? "✓ Terkonfigurasi" : "✗ Tidak ditemukan"}`);
+    console.log(`📝 API Key: ✓ Terkonfigurasi`);
+    console.log(`🤖 Model: gemini-2.0-flash`);
     console.log("=".repeat(40));
 });
